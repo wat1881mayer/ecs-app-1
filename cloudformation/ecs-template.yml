@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  ECSCluster:
+    Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName:  MyEcsCluster
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: my-ecs-task
+      NetworkMode: awsvpc
+      ContainerDefinitions:
+        - Name: my-ecs-learning-container
+          Image: <your-account-id>.dkr.ecr.us-east-1.amazonaws.com/<your-repo-name>/<your-image-name>:latest
+          Essential: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/fargate-task-definition
+              awslogs-region: us-east-1
+              awslogs-stream-prefix: ecs
+              mode: non-blocking
+              awslogs-create-group: "true"
+              max-buffer-size: 25m
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+              Protocol: tcp
+            - ContainerPort: 443
+              HostPort: 443
+              Protocol: tcp
+
+      Memory: 512
+      Cpu: 256
+      ExecutionRoleArn: <your-ecs-task-execution-role-arn>
+      TaskRoleArn: '<your-ecs-task-execution-role-arn>'
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX 
+  ECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      ServiceName: ecs-learning-service
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - your-security-group-id
+          Subnets:
+            - your-subnet-id
+            - your-subnet-id
+      TaskDefinition: !Ref ECSTaskDefinition
