@@ -64,7 +64,7 @@ Resources:
     Properties:
       GroupDescription: Enable HTTP access via port 80
       GroupName: ECS-Learning-ALB-sgs
-      VpcId: vpc-0927b65b2ce667d7e
+      VpcId: your-vpc-id
   ALBIngressRule:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
