@@ -41,6 +41,7 @@ Resources:
         OperatingSystemFamily: LINUX
   ECSService:
     Type: "AWS::ECS::Service"
+    DependsOn: ALBListener
     Properties:
       ServiceName: ecs-learning-service
       Cluster: !Ref ECSCluster
