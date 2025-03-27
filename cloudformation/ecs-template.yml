@@ -1,9 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
 Resources:
   ECSCluster:
-    Type: 'AWS::ECS::Cluster'
+    Type: "AWS::ECS::Cluster"
     Properties:
-      ClusterName:  MyEcsCluster
+      ClusterName: MyEcsCluster
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -33,14 +33,14 @@ Resources:
       Memory: 512
       Cpu: 256
       ExecutionRoleArn: <your-ecs-task-execution-role-arn>
-      TaskRoleArn: '<your-ecs-task-execution-role-arn>'
+      TaskRoleArn: "<your-ecs-task-execution-role-arn>"
       RequiresCompatibilities:
         - FARGATE
       RuntimePlatform:
         CpuArchitecture: X86_64
-        OperatingSystemFamily: LINUX 
+        OperatingSystemFamily: LINUX
   ECSService:
-    Type: 'AWS::ECS::Service'
+    Type: "AWS::ECS::Service"
     Properties:
       ServiceName: ecs-learning-service
       Cluster: !Ref ECSCluster
@@ -55,3 +55,55 @@ Resources:
             - your-subnet-id
             - your-subnet-id
       TaskDefinition: !Ref ECSTaskDefinition
+      LoadBalancers:
+        - ContainerName: my-ecs-learning-container
+          ContainerPort: 80
+          TargetGroupArn: !Ref ALBTargetGroup
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP access via port 80
+      GroupName: ECS-Learning-ALB-sgs
+      VpcId: vpc-0927b65b2ce667d7e
+  ALBIngressRule:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !GetAtt ALBSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 80
+      ToPort: 80
+      CidrIp: 0.0.0.0/0
+  ECSApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      IpAddressType: ipv4
+      Name: ECS-Learning-Alb
+      Scheme: internet-facing
+      SecurityGroups:
+        - !GetAtt ALBSecurityGroup.GroupId
+      Subnets:
+        - your-public-subnet-id
+        - your-public-subnet-id
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: ECS-Learning-TargetGroup
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: your-vpc-id
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 2
+
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
+      LoadBalancerArn: !Ref ECSApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
